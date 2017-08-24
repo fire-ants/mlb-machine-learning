@@ -5,12 +5,15 @@ install.packages("stringr")
 install.packages("ggplot2")
 install.packages("RSQLite")
 install.packages("dbplyr")
+install.packages("dbConnect")
+
 library(pitchRx)    ## thank you Carson Sievert!!!
 library(dplyr)      ## thank you Hadley Wickham
 library(stringr)
 library(ggplot2)
 library(RSQLite)
 library(dbplyr)
+library(dbConnect)
 
 # load Quantitative and Qualitative Scoring Functions Functions
 # Quant scored in terms of Out (-1) and Hit (1)
@@ -61,31 +64,29 @@ fix_quant_score <- function(event) {
 ## Use dplyer to create SQLite database
 #library(dplyr)
 #my_db2016 <- src_sqlite("2016pitchRx.sqlite3", create = TRUE)
-my_db2017 <- src_sqlite("2017pitchRx.sqlite3", create = TRUE)
+my_db072017 <- src_sqlite("072017pitchRx.sqlite3", create = TRUE)
 
 #confirm empty
 my_db2016
-my_db2017
+my_db072017
 
 ## scrape 2016 game data and store in the database
 #library(pitchRx)
 todayDate <- Sys.Date()
 #3scrape(start = "2016-04-03", end = "2016-11-02", suffix = "inning/inning_all.xml", connect = my_db2016$con)
-scrape(start = "2017-04-02", end = "2017-08-23", suffix = "inning/inning_all.xml", connect = my_db2017$con)
+scrape(start = "2017-07-01", end = "2017-07-31", suffix = "inning/inning_all.xml", connect = my_db072017$con)
 
-# To speed up execution time, create an index on these three fields.
-library("dbConnect", lib.loc="/Library/Frameworks/R.framework/Versions/3.3/Resources/library")
-
-dbSendQuery(my_db2016$con, "CREATE INDEX url_atbat ON atbat(url)") 
-dbSendQuery(my_db2016$con, "CREATE INDEX url_pitch ON pitch(url)")
-dbSendQuery(my_db2016$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
-dbSendQuery(my_db2016$con, "CREATE INDEX des_index ON pitch(des)")
+# To speed up execution time, create an index on these three fields
+dbSendQuery(my_db072017$con, "CREATE INDEX url_atbat ON atbat(url)") 
+dbSendQuery(my_db072017$con, "CREATE INDEX url_pitch ON pitch(url)")
+dbSendQuery(my_db072017$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
+dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
 
 
 # Load data from final month of World Series
 #data.fin.month <- scrape(start = "2016-09-25", end = "2016-10-24", connect = my_db1$con)
 #data.season 
 
-pitch17 <- select(tbl(my_db2017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, count, zone, nasty)
-atbat17 <- select(tbl(my_db2017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
+pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, count, zone, nasty)
+atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
 

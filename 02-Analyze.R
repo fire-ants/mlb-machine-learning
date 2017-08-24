@@ -1,11 +1,14 @@
 ## Conduct analysis
 
 # Mike Trout
-batsTrout <- filter(atbat16, batter == "545361")
+batsTrout <- filter(atbat072017, batter == "545361")
+# Jose Altuve 
+batsAltuve <- filter(atbat072017, batter == "1839905")
+
 #FBs <- filter(pitch11, pitch_type == "FF" | pitch_type == "FC")
 
 # inner join all pitches to specific batter
-pitchesTrout <- collect(inner_join(pitch16, batsTrout))
+pitchesTrout <- collect(inner_join(pitch072017, batsTrout))
 
 # 3028 pitches thrown to Trout
 nrow(pitchesTrout)
