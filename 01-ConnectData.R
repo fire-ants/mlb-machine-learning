@@ -73,8 +73,10 @@ my_db072017
 ## scrape 2016 game data and store in the database
 #library(pitchRx)
 todayDate <- Sys.Date()
+# 60daysAgo <- todayDate - 60
 #3scrape(start = "2016-04-03", end = "2016-11-02", suffix = "inning/inning_all.xml", connect = my_db2016$con)
 scrape(start = "2017-07-01", end = "2017-07-31", suffix = "inning/inning_all.xml", connect = my_db072017$con)
+scrape(start = "2017-06-01", end = "2017-06-30", suffix = "inning/inning_all.xml", connect = my_db072017$con)
 
 # To speed up execution time, create an index on these three fields
 dbSendQuery(my_db072017$con, "CREATE INDEX url_atbat ON atbat(url)") 
