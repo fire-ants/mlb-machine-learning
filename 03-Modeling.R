@@ -73,7 +73,6 @@
     table(GoodBadTree.pred,sub.joined.RHP$GoodBadQual)
     mean(GoodBadTree.pred==sub.joined.RHP$GoodBadQual)
 
-    
     #prune tree, plot pruned tree and check accuracy
     #prune.GoodBadTree=prune(GoodBadTree, cp = 0.0123457)
     #rpart.plot(prune.GoodBadTree, uniform=TRUE, main="Pruned Outcomes for Altuve", cex = 0.6)
@@ -82,7 +81,7 @@
     #mean(pruneGoodBadTree.pred==sub.joined.RHP$GoodBadQual)
     
     
-    #define function used to generate rules for classification tree end nodes 
+    #define function to generate rules for classification tree end nodes 
     GoodBadTree.Rules <- function(model)
     {
         if (!inherits(model, "rpart")) stop("Not a legitimate rpart tree")
@@ -115,10 +114,9 @@
     # call function
     GoodBadTree.Rules(GoodBadTree)
     
-    # alternate function to summarize tree node results 
+    # alternate method to summarize tree node results 
     GoodBadruleNF <- unname(unlist(path.rpart(GoodBadTree, nodes=as.numeric(row.names(GoodBadTree$frame)))))[-1]
-    #GoodBadruleNF2 <- str_replace_all(GoodBadruleNF, pattern = ",", replacement = "_")
-    
+    #GoodBadruleNF2 <- str_replace_all(GoodBadruleNF, pattern = ",", replacement = "_") #replaces commas
     GoodBadnode_data <- with(sub.joined.RHP, sub.joined.RHP[eval(parse(text=paste(GoodBadruleNF, collapse=" & "))), ])
     
 
