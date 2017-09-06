@@ -2,7 +2,7 @@
 
 # filter AtBats for only the targeted hitter
 TargetBatter <- "514888"    ## Altuve
-TargetBatter <- "545361"    ## Trout
+#TargetBatter <- "545361"    ## Trout
 batsTargetBatter <- filter(atbat072017, batter == TargetBatter)
 
 # Mike Trout
@@ -17,7 +17,7 @@ batsTargetBatter <- filter(atbat072017, batter == TargetBatter)
 pitchesTargetBatter <- collect(inner_join(pitch072017, batsTargetBatter))
 
 # 3028 pitches thrown to Trout
-nrow(pitchesTrout)
+# nrow(pitchesTrout)
 nrow(pitchesTargetBatter)
 
 joined <- pitchesTargetBatter %>% mutate(quant_score_des = get_quant_score(des),
@@ -35,7 +35,7 @@ joined$event <- as.factor(joined$event)
 
 ###  Commenceth thou Machine Learning.   Predict how to minimize HitterVal, or alternatively, how to minimize type = X
 #  Interesting variables from pitch
-# tfs, tfs_zulu, id, px, pz, pitch_type, count, zone, nasty
+# pitch_type, count, zone, nasty
 
 # Interesting variables from atbat
 # p_throws, inning_side

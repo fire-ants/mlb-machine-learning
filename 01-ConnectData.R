@@ -67,16 +67,14 @@ fix_quant_score <- function(event) {
 my_db072017 <- src_sqlite("072017pitchRx.sqlite3", create = TRUE)
 
 #confirm empty
-my_db2016
+#my_db2016
 my_db072017
 
 ## scrape 2016 game data and store in the database
 #library(pitchRx)
-todayDate <- Sys.Date()
-# 60daysAgo <- todayDate - 60
-#3scrape(start = "2016-04-03", end = "2016-11-02", suffix = "inning/inning_all.xml", connect = my_db2016$con)
-scrape(start = "2017-07-01", end = "2017-07-31", suffix = "inning/inning_all.xml", connect = my_db072017$con)
-scrape(start = "2017-06-01", end = "2017-06-30", suffix = "inning/inning_all.xml", connect = my_db072017$con)
+Today <- Sys.Date()
+ThirtyDaysAgo <- Today - 30
+scrape(start = ThirtyDaysAgo, end = Today, suffix = "inning/inning_all.xml", connect = my_db072017$con)
 
 # To speed up execution time, create an index on these three fields
 dbSendQuery(my_db072017$con, "CREATE INDEX url_atbat ON atbat(url)") 
@@ -89,6 +87,6 @@ dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
 #data.fin.month <- scrape(start = "2016-09-25", end = "2016-10-24", connect = my_db1$con)
 #data.season 
 
-pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, count, zone, nasty)
+pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, end_speed, count, zone, nasty)
 atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
 
