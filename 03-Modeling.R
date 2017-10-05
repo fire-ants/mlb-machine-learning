@@ -1,5 +1,8 @@
 ## load required libraries
 
+    #install.packages('mi')
+    #install.packages('extracat')
+
     library(pitchRx)
     library(plyr)
     library(dplyr)      
@@ -17,13 +20,16 @@
    	library(RColorBrewer)				# Color selection for fancy tree plot
     library(party)					# Alternative decision tree algorithm
     library(partykit)				# Convert rpart object to BinaryTree
-    library(randomForest)
     library(knitr)
     library(gbm)
     library(ipred)
     library(e1071)
     library(MASS)
     library(tidyr)
+    library(dplyr)
+    library(GGally) #for parallel coordinate plot
+
+
 
 
 #set.seed(2121)
@@ -35,13 +41,34 @@
     
 
 ## exclude non relevant columns and create test and train data sets
-    nzv <- nearZeroVar(joined.temp)
-    joined.temp2 <- joined.temp[,-nzv]
+    #nzv <- nearZeroVar(joined.temp)
+    #joined.temp2 <- joined.temp[,-nzv]
+  
+  ### Colin Edit ###  
     
-    mostlyNA <- sapply(joined.temp2, function(x) mean(is.na(x))) > 0.95
-    joined.temp2 <- joined.temp2[,mostlyNA == F]
+    visna(joined, tp = TRUE, col = "blue")
     
-    joined.temp3<- joined.temp2[-c(1:11,17,18,20,21,22,24,25,26)]
+    ggplot(joined, aes(x = zone, y = hitter_val)) + geom_tile()
+    library(GGally)
+    joined <- within(joined, goodbad <- factor(ifelse(hitter_val > 0, 1, 0)))
+    Rpitch <- joined %>% filter(p_throws = "R")
+    Rpitch <- joined %>% filter(p_throws == "R")
+    Lpitch <- joined %>% filter(p_throws =="L")
+    RpitchRh <- Rpitch %>% filter(stand == "R")
+    RpitchLh <- Rpitch %>% filter(stand == "L")
+    RpitchLh <- Rpitch %>% filter(stand == "L")
+    LpitchLh <- Lpitch %>% filter(stand == "L")
+    LpitchRh <- Lpitch %>% filter(stand == "L")
+    LpitchRh <- Lpitch %>% filter(stand == "R")
+
+    RpRh_pcp <- ggparcoord(data = RpitchRh[order(RpitchRh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "RpRh PCP v Pitcher Outcome", alphaLines = 0.010)
+    RpLh_pcp <- ggparcoord(data = RpitchLh[order(RpitchLh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "RpLh PCP v Pitcher Outcome", alphaLines = 0.012)
+    LpRh_pcp <- ggparcoord(data = LpitchRh[order(LpitchRh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "LpRh PCP v Pitcher Outcome", alphaLines = 0.021)
+    LpLh_pcp <- ggparcoord(data = LpitchLh[order(LpitchLh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "LpLh PCP v Pitcher Outcome", alphaLines = 0.054)
+    RpRh_pcp
+    RpLh_pcp
+    LpLh_pcp
+    LpRh_pcp
     
     # convert to factor variables
     joined.temp3$zone <- as.factor(joined.temp3$zone)
