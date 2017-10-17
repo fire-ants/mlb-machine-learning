@@ -15,3 +15,5 @@ Test machine learning against MLB PitchFX data.
 # Interesting variables from atbat
 * p_throws
 * inning_side
+* b_height
+* p_height
