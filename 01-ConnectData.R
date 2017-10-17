@@ -87,6 +87,11 @@ dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
 #data.fin.month <- scrape(start = "2016-09-25", end = "2016-10-24", connect = my_db1$con)
 #data.season 
 
-pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, end_speed, count, zone, nasty)
-atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
+#pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, end_speed, count, zone, nasty)
+#atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
+
+pitch072017 <- tbl(my_db072017, "pitch")
+atbat072017 <- tbl(my_db072017, "atbat")
+
+
 
