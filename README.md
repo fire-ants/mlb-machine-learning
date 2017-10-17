@@ -6,13 +6,11 @@ Test machine learning against MLB PitchFX data.
 #  Interesting variables from pitch
 * tfs
 * tfs_zulu
-* id 
 * px
 * pz
 * pitch_type
 * count
 * zone
-* nasty
 
 # Interesting variables from atbat
 * p_throws

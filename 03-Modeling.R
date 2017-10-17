@@ -25,8 +25,7 @@
     library(MASS)
     library(tidyr)
 
-
-#set.seed(2121)
+set.seed(2121)
 
 ## manipulate data
 ## redefine hitter_val as good or bad outcome
@@ -119,7 +118,3 @@
     #GoodBadruleNF2 <- str_replace_all(GoodBadruleNF, pattern = ",", replacement = "_") #replaces commas
     GoodBadnode_data <- with(sub.joined.RHP, sub.joined.RHP[eval(parse(text=paste(GoodBadruleNF, collapse=" & "))), ])
     
-
-
-   
-
