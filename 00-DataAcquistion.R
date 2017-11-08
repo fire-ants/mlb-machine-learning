@@ -115,4 +115,31 @@ levels(joined$pitch_type)[levels(joined$pitch_type)=="FC"] <- "SL"
 levels(joined$pitch_type)[levels(joined$pitch_type)=="KC"] <- "KN"
 
 # Decide Good (1) or Bad (0)
-joined.classic <- joined %>% mutate(hv_binary = ifelse(hitter_val < 0, 1, 0)) 
+joined.classic <- joined %>% mutate(hv_binary = ifelse(hitter_val < 0, 1, 0))
+
+#view missing data
+#visna(joined.classic, tp = TRUE, col = "blue")
+
+#create subsets of pitcher stance and batter stance 
+Rh <- joined.classic %>% filter(stand == "R")
+Lh <- joined.classic %>% filter(stand == "L")
+
+Rpitch <- joined.classic %>% filter(p_throws == "R")
+Lpitch <- joined.classic %>% filter(p_throws =="L")
+
+RhRp <- Rh %>% filter(p_throws == "R")
+RhLp <- Rh %>% filter(p_throws == "L")
+LhRp <- Lh %>% filter(p_throws == "R")
+LhLp <- Lh %>% filter(p_throws == "L")
+
+#Primary Component Plots... need to update table names per above convention
+PCP <- ggparcoord(data = joined_classic[order(joined_classic$hv_binary, decreasing = FALSE),], columns = c(40,46,30,16,17,32,88), groupColumn = "hv_binary", title = "Factors v Pitcher Outcome", alpha = .01) PCP_cat <- ggparcoord(data = joined.temp[order(joined.temp$GoodBadQual, decreasing = TRUE),], columns = c(40,46,30,32,88), groupColumn = "GoodBadQual", title = "Categorical Factors v Pitcher Outcome")
+RpRh_pcp <- ggparcoord(data = RhRp[order(RhRp$hv_binary, decreasing = FALSE),], columns = c(8,9,11,14,27,28), groupColumn = "hv_binary", title = "RpRh PCP v Pitcher Outcome")
+RpLh_pcp <- ggparcoord(data = RpitchLh[order(RpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "RpLh PCP v Pitcher Outcome")
+LpRh_pcp <- ggparcoord(data = LpitchRh[order(LpitchRh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "LpRh PCP v Pitcher Outcome")
+LpLh_pcp <- ggparcoord(data = LpitchLh[order(LpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "LpLh PCP v Pitcher Outcome")
+PCP
+RpRh_pcp
+RpLh_pcp
+LpLh_pcp
+LpRh_pcp
