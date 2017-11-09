@@ -24,13 +24,11 @@ import requests # importing the requests library
 import json
 
 
-# In[51]:
+# In[71]:
 
 def hv_model(data, features):
     
-    #findings lists
-    RHPfindingslist = list()
-    LHPfindingslist = list()
+    
     
     #import data, remove rows with NA values
     raw = pandas.read_csv(data, encoding = "utf-8-sig").dropna(axis=0)
@@ -42,7 +40,12 @@ def hv_model(data, features):
     P_throws = raw.p_throws.unique()
     
     #for each batter ID, produce two model results- against left handed pitchers and right handed pitchers
-    for batter_id in Batters[5:8]:
+    #for batter_id in Batters[5:8]:
+    for batter_id in Batters:
+        #findings lists
+        RHPfindingslist = list()
+        LHPfindingslist = list()
+        
         for hand in P_throws: 
             records = raw[(raw.batter == batter_id) & (raw.p_throws == hand)]
             num_events = len(records.index)
@@ -66,7 +69,7 @@ def hv_model(data, features):
                 var_interest.ptz = var_interest.ptz.astype(object)   
             else:
                 pass
-
+            
             #estimator vector: binary representation of hitter_val: if hv <0, 1; else, 0. 
             Y = var_interest[['hv_binary']]
             
@@ -145,20 +148,20 @@ def hv_model(data, features):
             #Results!!
             
             avg_success=Y.mean().values[0]
-            print avg_success
+            #print avg_success
             #print Y.mean()[0], Y.mean()[1]
             
             #Baseline_success = Y.mean().str.get(0)
             #print "Random %s-handed pitcher's baseline success ratio against hitter:" % (hand, , Y.mean()
             if hand == 'R':
-                    RHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have success rate:" % (hand), "{0:.0}%".format(avg_success* 100)))
+                    RHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))))
             elif hand == 'L':
-                    LHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have success rate:" % (hand), "{0:.0}%".format(avg_success* 100)))
+                    LHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))))
             else:
                 pass
             
             
-            print "Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have success rate:" % (hand), "{0:.0}%".format(avg_success* 100)
+            print "Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))
             #print("")
             #print "Results of logistic regression" 
             #print("")
@@ -248,12 +251,13 @@ def hv_model(data, features):
         
             #Print the results!
             for index,row in Top_5.iterrows():
+                print "Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100))
                 
                 if hand == 'R':
-                    RHPfindingslist.append("Throw a %s %s for a success rate of %s!" % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
-                #print "Throw a %s %s for a success rate of %s!" % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100))
+                    RHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
+                    
                 elif hand == 'L':
-                    LHPfindingslist.append("Throw a %s %s for a success rate of %s!" % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
+                    LHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
                 else:
                     pass
                 #Top_5.loc[index,'New_Odds']
@@ -266,175 +270,24 @@ def hv_model(data, features):
         
             #payload = {'findings': ['Throw a curve ball to the top right', 'Throw a curve ball down the middle']}
             #findingsList = ('Throw a curve ball to the top right', 'Throw a curve ball down the middle')
-            findingsDict = {'leftyFindings': LHPfindingslist, 'rightyFindings': RHPfindingslist}
+            
+        findingsDict = {'leftyFindings': LHPfindingslist, 'rightyFindings': RHPfindingslist}
+        #print findingsDict
+        payload = json.dumps(findingsDict)
+        #print(payload)
+        # api-endpoint
+        URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
+        try:
+            r = requests.post(url = URL, data = payload)
+            print(r.status_code)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            print(err)
 
-            payload = json.dumps(findingsDict)
-            #print(payload)
-            # api-endpoint
-            URL = 'http://mlb-player-api.cfapps.io/player/460075/insight'
-            try:
-                r = requests.post(url = URL, data = payload)
-                print(r.status_code)
-                r.raise_for_status()
-            except requests.exceptions.HTTPError as err:
-                print(err)
+        print ("")
 
 
-# In[52]:
+# In[70]:
 
 hv_model("HVal-2017-11-08.csv", ['ptz','hv_binary'])
-
-
-# In[28]:
-
-
-
-
-# In[6]:
-
-def hv_model_test(data, features):
-    
-    #import data
-    raw = pandas.read_csv(data, encoding = "utf-8-sig")
-    
-    #drop NA
-    raw = raw.dropna(axis=0)
-    
-    Batters = raw.batter.unique()
-    
-    P_throws = raw.p_throws.unique()
-    
-    #for row in Top_5['Suggestion']:
-     #           Top_5['null','pt','zc'] = row.str.split(pat='_', n=-1, expand=True)
-                #descrip.columns = ['pt','zc']
-    
-    for batter_id in Batters[:1]:
-        for hand in P_throws: 
-            descrip = raw.pitch_type_zone.str.split(pat='_', n=-1, expand=True)
-            descrip.columns = ['pt','zc']
-            
-    def applyFunc(s):
-        if s == 'FF':
-            return 'four-seam fastball'
-        elif s == 'SI':
-            return 'sinker'
-        elif s == 'SL':
-            return 'slider'
-        elif s == 'KN':
-            return 'knuckleball'
-        elif s == 'CH':
-            return 'change-up'
-        elif s == 'CU':
-            return 'curve-ball'
-        elif s == 'FT':
-            return 'two-seam fastball'
-        return ''
-
-    descrip['pd'] = descrip['pt'].apply(applyFunc)
-    
-    def applyFunc2(s):
-        if s == '1':
-            return 'to the top right'
-        elif s == '2':
-            return 'top center'
-        elif s == '3':
-            return 'to the top left'
-        elif s == '4':
-            return 'center right'
-        elif s == '5':
-            return 'down the middle'
-        elif s == '6':
-            return 'center left'
-        elif s == '7':
-            return 'to the bottom right'
-        elif s == '8':
-            return 'bottom center'
-        elif s == '9':
-            return 'to the bottom left'
-        elif s == '10':
-            return 'into outer space'
-        elif s == '11':
-            return 'upper right of strike zone'
-        elif s == '12':
-            return 'upper left of strike zone'
-        elif s == '13':
-            return 'bottom right of strike zone'
-        elif s == '14':
-            return 'bottom left of strike zone'
-        return ''
-
-    descrip['zd'] = descrip['zc'].apply(applyFunc2)
-    #descrip
-    
-    #for line in descrip['pt'][:10]:
-     #   if line == 'FF':
-      #      descrip.loc[line,'pd'] = 'four-seam fastball'
-       # elif 'SI' in line:
-        #    descrip.loc[line,'pd'] = 'sinker'
-        #elif 'SL' in line:
-        #    descrip.loc[line,'pd'] = 'slider'
-        #elif 'KN' in line:
-        #    descrip.loc[line,'pd'] = 'knuckleball'
-        #elif 'CH' in line:
-        #    descrip.loc[line,'pd'] = 'change-up'
-        #elif 'CU' in line:
-        #    descrip.loc[line,'pd'] = 'curve-ball'
-        #elif 'FT' in line:
-        #    descrip.loc[line,'pd'] = 'two-seam fastball'
-        #else:
-           # descrip.loc[line,'pd'] = "Other"
-        
-    print descrip[:10]
-        #ft two-seam fastball
-        #sl slider
-        #kn knuckle
-        #ch change-up
-        #cu curveball
-        #si sinker
-        #print line
-        
-            #Series.str.split(pat=None, n=-1, expand=False)
-            #records = raw[(raw.batter == batter_id) & (raw.p_throws == stand)]
-            #print records.head()
-            #var_interest = records[features]
-            #print var_interest.head()
-            
-            #predictors of interest
-            #X = var_interest.drop(['hv_binary'], axis = 1)
-            #print X.head()
-
-            #estimator vector: binary representation of hitter_val: if hv <0, 1; else, 0. 
-            #Y = var_interest[['hv_binary']]
-
-
-# In[7]:
-
-hv_model_test("HVal-2017-11-08.csv", ['pitch.type.zone','batter_id','p_throws'])
-
-
-# In[ ]:
-
-# show plots in the notebook
-# inspiration from http://nbviewer.jupyter.org/gist/justmarkham/6d5c061ca5aee67c4316471f8c2ae976
-get_ipython().magic(u'matplotlib inline')
-
-
-# In[ ]:
-
-X_encoded.pitch_type.hist(bins=11)
-plt.title('Pitch Type Histogram')
-plt.xlabel('Pitch Type')
-plt.ylabel('Frequency')
-
-#interesting that some pitch types are very rare compared to others
-
-
-# In[ ]:
-
-X_encoded.zone.hist(bins=14)
-plt.title('Zone Histogram')
-plt.xlabel('Zone')
-plt.ylabel('Frequency')
-
-#Note the mysteriously missing zone 10
 
