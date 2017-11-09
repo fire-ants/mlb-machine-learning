@@ -11,23 +11,16 @@ library(lubridate)
 my_dbProd <- src_sqlite("pitchRxProd.sqlite3", create = TRUE)
 
 Today <- Sys.Date()
-ThirtyDaysAgo <- Today - 30
+NinetyDaysAgo <- Today - 90
 
 #confirm empty
-#my_db2016
 my_dbProd
 
 
-## scrape 2016 game data and store in the database
-#library(pitchRx)
-#scrape(start = "2016-04-03", end = "2016-11-02", suffix = "inning/inning_all.xml", connect = my_db1$con)
-#scrape(start = "2016-04-01", end = "2016-10-31", suffix = "inning/inning_all.xml", connect = my_db2016$con)
-scrape(start = ThirtyDaysAgo, end = Today, suffix = "inning/inning_all.xml", connect = my_dbProd$con)
-
+## scrape game data and store in the database
+scrape(start = NinetyDaysAgo, end = Today, suffix = "inning/inning_all.xml", connect = my_dbProd$con)
 
 # To speed up execution time, create an index on these three fields.
-library("dbConnect", lib.loc="/Library/Frameworks/R.framework/Versions/3.3/Resources/library")
-
 dbSendQuery(my_dbProd$con, "CREATE INDEX url_atbat ON atbat(url)") 
 dbSendQuery(my_dbProd$con, "CREATE INDEX url_pitch ON pitch(url)")
 dbSendQuery(my_dbProd$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
@@ -76,16 +69,6 @@ fix_quant_score <- function(event) {
     )
     return(score)
 }
-
-## begin subsetting
-#mlbID <- '514888'
-
-#hitters <- c('514888','453568','457759','519317','458015','547180','592450','545361','457705','502671','518626','502517','518934','471865','592178','519346','460075')
-#hitters <- c('514888')
-
-#TargetedAtBats <- filter(atbat16, batter == mlbID)
-#TargetedAtBats <- atbat16
-
 # join filtered atbats to all pitches
 pitchesJoin <- collect(inner_join(pitch16, atbat16))
 
@@ -118,10 +101,10 @@ levels(joined$pitch_type)[levels(joined$pitch_type)=="KC"] <- "KN"
 joined.classic <- joined %>% mutate(hv_binary = ifelse(hitter_val < 0, 1, 0))
 
 #create zone and pitch type pairs
-joined.classic <- joined.classic %>% mutate(pitch_type_zone=paste(pitch_type,zone, sep = "_"))
+joined.classic <- joined.classic %>% mutate(ptz=paste(pitch_type,zone, sep = "_"))
 
 #remove infrequent pitch types
-#joined.classic %>% filter(pitch_type == c(EP,FO,PO,SC))
+joined.classic.pitchedit <- joined.classic %>% filter(pitch_type != c('EP','FO','PO','SC'))
 
 #view missing data
 #visna(joined.classic, tp = TRUE, col = "blue")
@@ -149,3 +132,6 @@ RpRh_pcp <- ggparcoord(data = RhRp[order(RhRp$hv_binary, decreasing = FALSE),], 
 SS_NonSZ_Rh <- Rpitch %>% filter (des == "Swinging Strike" & zone == c(11,12,13,14))
 SS_NonSZ_Lh <- Lpitch %>% filter (des == "Swinging Strike" & zone == c(11,12,13,14))
 
+#export features of interest, with hv_binary label 1 if <0, else 0
+var.interest <- joined.classic.pitchedit %>% select(3,5,6,8:13,16,18,22,27:28,31)
+write.csv(var.interest, file = paste(format(Sys.Date(), "HVal-%Y-%m-%d"), "csv", sep = "."))
