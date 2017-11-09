@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[29]:
+# In[79]:
 
 from sklearn import datasets
 from sklearn import preprocessing
@@ -22,26 +22,44 @@ from sympy import Symbol
 
 import requests # importing the requests library
 import json
+import os
 
 
-# In[71]:
+# In[83]:
 
-def hv_model(data, features):
+os.chdir("/db")
+
+
+# In[81]:
+
+#os.getcwd()
+
+
+# In[ ]:
+
+#[514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
+
+
+# In[87]:
+
+def hv_model(features):
     
-    
+    #"rawdata_ML.csv"
     
     #import data, remove rows with NA values
-    raw = pandas.read_csv(data, encoding = "utf-8-sig").dropna(axis=0)
+    raw = pandas.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
 
     #identify unique batter ids in dataset
     Batters = raw.batter.unique()
+    
+    Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
     
     #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
     P_throws = raw.p_throws.unique()
     
     #for each batter ID, produce two model results- against left handed pitchers and right handed pitchers
     #for batter_id in Batters[5:8]:
-    for batter_id in Batters:
+    for batter_id in Batters_list:
         #findings lists
         RHPfindingslist = list()
         LHPfindingslist = list()
@@ -266,6 +284,7 @@ def hv_model(data, features):
             print("")
             print "Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y)
             print("")
+            print batter_id
             #print model.decision_function(X_hot)
         
             #payload = {'findings': ['Throw a curve ball to the top right', 'Throw a curve ball down the middle']}
@@ -273,12 +292,12 @@ def hv_model(data, features):
             
         findingsDict = {'leftyFindings': LHPfindingslist, 'rightyFindings': RHPfindingslist}
         #print findingsDict
-        payload = json.dumps(findingsDict)
+        #payload = json.dumps(findingsDict)
         #print(payload)
         # api-endpoint
         URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
         try:
-            r = requests.post(url = URL, data = payload)
+            r = requests.post(url = URL, data = findingsDict)
             print(r.status_code)
             r.raise_for_status()
         except requests.exceptions.HTTPError as err:
@@ -287,7 +306,7 @@ def hv_model(data, features):
         print ("")
 
 
-# In[70]:
+# In[88]:
 
-hv_model("HVal-2017-11-08.csv", ['ptz','hv_binary'])
+hv_model(['ptz','hv_binary'])
 
