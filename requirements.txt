@@ -1,0 +1,20 @@
+datasets
+preprocessing
+make_classification
+ExtraTreesClassifier
+RandomTreesEmbedding
+RandomForestClassifier
+OneHotEncoder
+numpy as np
+matplotlib.pyplot as plt
+pandas
+
+train_test_split
+make_pipeline
+linear_model
+decomposition
+datasets
+
+sympy
+solve
+Symbol
