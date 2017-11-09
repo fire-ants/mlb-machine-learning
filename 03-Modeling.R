@@ -1,7 +1,7 @@
 ## load required libraries
 
-    #install.packages('mi')
-    #install.packages('extracat')
+    install.packages('mi')
+    install.packages('extracat')
 
     library(pitchRx)
     library(plyr)
@@ -24,20 +24,23 @@
     library(gbm)
     library(ipred)
     library(e1071)
-    library(MASS)
+    #library(MASS)
     library(tidyr)
     library(dplyr)
     library(GGally) #for parallel coordinate plot
-
-
+    library(extracat)
 
 set.seed(2121)
 
 ## manipulate data
-## redefine hitter_val as good or bad outcome
-    joined.temp<-mutate(joined,GoodBadQuant=ifelse(hitter_val<1, 1,0))
-    joined.temp<-mutate(joined.temp,GoodBadQual=ifelse(hitter_val<1, "Good","Bad"))
+## redefine hitter_val as good or bad outcome.. note mod to hitterval logic here as excluding hitter_val btw 0 and 1 [since removed] 
+    #joined_hvrefined <- joined %>% filter(hitter_val >=1 | hitter_val <0)
+
+    joined_classic <- joined %>% mutate(hv_binary = ifelse(hitter_val<0, 1, 0))
     
+    #joined.temp<-mutate(joined_hvrefined,GoodBadQuant=ifelse(hitter_val<0, 1,0))
+    #joined.temp<-mutate(joined.temp,GoodBadQual=ifelse(hitter_val<0, "Good Outcome","Bad Outcome"))
+ 
 
 ## exclude non relevant columns and create test and train data sets
     #nzv <- nearZeroVar(joined.temp)
@@ -45,29 +48,48 @@ set.seed(2121)
   
   ### Colin Edit ###  
     
-    visna(joined, tp = TRUE, col = "blue")
+    #visualize missing values using visna (aka "visualize na") from extracat package
+    visna(joined_classic, tp = TRUE, col = "blue")
     
-    ggplot(joined, aes(x = zone, y = hitter_val)) + geom_tile()
-    library(GGally)
-    joined <- within(joined, goodbad <- factor(ifelse(hitter_val > 0, 1, 0)))
-    Rpitch <- joined %>% filter(p_throws = "R")
-    Rpitch <- joined %>% filter(p_throws == "R")
-    Lpitch <- joined %>% filter(p_throws =="L")
-    RpitchRh <- Rpitch %>% filter(stand == "R")
-    RpitchLh <- Rpitch %>% filter(stand == "L")
-    RpitchLh <- Rpitch %>% filter(stand == "L")
-    LpitchLh <- Lpitch %>% filter(stand == "L")
-    LpitchRh <- Lpitch %>% filter(stand == "L")
-    LpitchRh <- Lpitch %>% filter(stand == "R")
+    #joined.temp$GoodBadQual <- as.factor(joined.temp$GoodBadQual)
+    
+    #create subsets of pitcher stance and batter stance 
+    Rh <- joined.temp %>% filter(stand = "R")
+    Lh <- joined.temp %>% filter(stand = "L")
+    
+    Rpitch <- joined.temp %>% filter(p_throws == "R")
+    Lpitch <- joined.temp %>% filter(p_throws =="L")
+    
+    RhRp <- Rh %>% filter(p_throws == "R")
+    RhLp <- Rh %>% filter(p_throws == "L")
+    LhRp <- Lh %>% filter(p_throws == "R")
+    LhLp <- Lh %>% filter(p_throws == "L")
 
-    RpRh_pcp <- ggparcoord(data = RpitchRh[order(RpitchRh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "RpRh PCP v Pitcher Outcome", alphaLines = 0.010)
-    RpLh_pcp <- ggparcoord(data = RpitchLh[order(RpitchLh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "RpLh PCP v Pitcher Outcome", alphaLines = 0.012)
-    LpRh_pcp <- ggparcoord(data = LpitchRh[order(LpitchRh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "LpRh PCP v Pitcher Outcome", alphaLines = 0.021)
-    LpLh_pcp <- ggparcoord(data = LpitchLh[order(LpitchLh$goodbad),], columns = c(10,11,14:18,20:26,28:30,32,34,35,88), groupColumn = "goodbad", title = "LpLh PCP v Pitcher Outcome", alphaLines = 0.054)
+    #Primary Component Plots... need to update table names per above convention
+    PCP <- ggparcoord(data = joined_classic[order(joined_classic$hv_binary, decreasing = FALSE),], columns = c(40,46,30,16,17,32,88), groupColumn = "hv_binary", title = "Factors v Pitcher Outcome", alpha = .01) PCP_cat <- ggparcoord(data = joined.temp[order(joined.temp$GoodBadQual, decreasing = TRUE),], columns = c(40,46,30,32,88), groupColumn = "GoodBadQual", title = "Categorical Factors v Pitcher Outcome")
+    RpRh_pcp <- ggparcoord(data = RpitchRh[order(RpitchRh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "RpRh PCP v Pitcher Outcome")
+    RpLh_pcp <- ggparcoord(data = RpitchLh[order(RpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "RpLh PCP v Pitcher Outcome")
+    LpRh_pcp <- ggparcoord(data = LpitchRh[order(LpitchRh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "LpRh PCP v Pitcher Outcome")
+    LpLh_pcp <- ggparcoord(data = LpitchLh[order(LpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "LpLh PCP v Pitcher Outcome")
+    PCP
     RpRh_pcp
     RpLh_pcp
     LpLh_pcp
     LpRh_pcp
+    
+    
+
+    
+    #export features of interest, with hv_binary label 1 if <0, else 0
+    var.interest <- joined_classic %>% select(id, tfs_zulu, inning_side.x, inning.x, pitcher_name, p_throws, batter_name, stand, count, pitch_type, zone, hitter_val, hv_binary)
+    write.csv(var.interest, file = "data_export_hv_binary_distinct_300_days.csv")
+
+    #End Colin Edit
+    
+    
+    
+    #Random tree classification in R follows
+    
     
     # convert to factor variables
     joined.temp3$zone <- as.factor(joined.temp3$zone)

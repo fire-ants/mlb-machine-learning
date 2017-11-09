@@ -65,22 +65,30 @@ fix_quant_score <- function(event) {
 #library(dplyr)
 #my_db2016 <- src_sqlite("2016pitchRx.sqlite3", create = TRUE)
 my_db072017 <- src_sqlite("072017pitchRx.sqlite3", create = TRUE)
+my_dbyear2017 <- src_sqlite("year2017pitchRx.sqlite3", create = TRUE)
 
 #confirm empty
 #my_db2016
 my_db072017
+my_dbyear2017
 
-## scrape 2016 game data and store in the database
+## scrape 2017 game data and store in the database
 #library(pitchRx)
 Today <- Sys.Date()
 ThirtyDaysAgo <- Today - 30
-scrape(start = ThirtyDaysAgo, end = Today, suffix = "inning/inning_all.xml", connect = my_db072017$con)
+Threehundreddaysago <- Today-300
+scrape(start = Threehundreddaysago, end = Today, suffix = "inning/inning_all.xml", connect = my_dbdyear2017$con)
 
 # To speed up execution time, create an index on these three fields
 dbSendQuery(my_db072017$con, "CREATE INDEX url_atbat ON atbat(url)") 
 dbSendQuery(my_db072017$con, "CREATE INDEX url_pitch ON pitch(url)")
 dbSendQuery(my_db072017$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
 dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
+
+dbSendQuery(my_dbyear2017$con, "CREATE INDEX url_atbat ON atbat(url)") 
+dbSendQuery(my_dbyear2017$con, "CREATE INDEX url_pitch ON pitch(url)")
+dbSendQuery(my_dbyear2017$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
+dbSendQuery(my_dbyear2017$con, "CREATE INDEX des_index ON pitch(des)")
 
 
 # Load data from final month of World Series
@@ -90,8 +98,9 @@ dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
 #pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, end_speed, count, zone, nasty)
 #atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
 
-pitch072017 <- tbl(my_db072017, "pitch")
-atbat072017 <- tbl(my_db072017, "atbat")
+pitch072017<- tbl(my_db072017, "pitch")
+atbat072017<- tbl(my_db072017, "atbat")
 
-
+pitchyear2017<- tbl(my_dbyear2017, "pitch")
+atbatyear2017<- tbl(my_dbyear2017, "atbat")
 

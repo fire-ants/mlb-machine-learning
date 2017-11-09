@@ -1,0 +1,110 @@
+## load libraries
+install.packages("pitchRx")
+install.packages("dplyr")
+install.packages("stringr")
+install.packages("ggplot2")
+install.packages("RSQLite")
+install.packages("dbplyr")
+install.packages("dbConnect")
+
+library(pitchRx)    ## thank you Carson Sievert!!!
+library(dplyr)      ## thank you Hadley Wickham
+library(stringr)
+library(ggplot2)
+library(RSQLite)
+library(dbplyr)
+library(dbConnect)
+
+# load Quantitative and Qualitative Scoring Functions Functions
+# Quant scored in terms of Out (-1) and Hit (1)
+get_quant_score <- function(des) {
+    score <- (
+        as.integer(str_detect(des, "Called Strike")) * -(1/3) +
+            as.integer(str_detect(des, "Foul")) * -(1/3) +
+            as.integer(str_detect(des, "In play, run")) * 1.0 +
+            as.integer(str_detect(des, "In play, out")) * -1.0 +
+            as.integer(str_detect(des, "In play, no out")) * 1.0 +
+            as.integer(str_detect(des, "^Ball$")) * 0.25 +
+            as.integer(str_detect(des, "Swinging Strike")) * -(1/3) +
+            as.integer(str_detect(des, "Hit By Pitch")) * 1.0 +
+            as.integer(str_detect(des, "Ball In Dirt")) * 0.25 +
+            as.integer(str_detect(des, "Missed Bunt")) * -(1/3) +
+            as.integer(str_detect(des, "Intent Ball")) * 0.25
+    )
+    return(score)
+}
+get_qual_score <- function(des) {
+    score <- (
+        as.integer(str_detect(des, "homer")) * 2 +
+            as.integer(str_detect(des, "line")) * 1.5 +
+            as.integer(str_detect(des, "sharp")) * 1.5 +
+            as.integer(str_detect(des, "grounds")) * -1 +
+            as.integer(str_detect(des, "flies")) * -1 +
+            as.integer(str_detect(des, "soft")) * -2 +
+            as.integer(str_detect(des, "pop")) * -2 +
+            as.integer(str_detect(des, "triples")) * 1.5 +
+            as.integer(str_detect(des, "doubles")) * 1.0 +
+            as.integer(str_detect(des, "error")) * 0.5
+    )
+    return(score)
+}
+
+fix_quant_score <- function(event) {
+    score <- (
+        as.integer(str_detect(event, "Groundout")) * -2 +
+            as.integer(str_detect(event, "Forceout")) * -2 +
+            as.integer(str_detect(event, "Field Error")) * -2 
+    )
+    return(score)
+}
+
+
+
+
+## Use dplyer to create SQLite database
+#library(dplyr)
+#my_db2016 <- src_sqlite("2016pitchRx.sqlite3", create = TRUE)
+my_db072017 <- src_sqlite("072017pitchRx.sqlite3", create = TRUE)
+my_dbyear2017 <- src_sqlite("year2017pitchRx.sqlite3", create = TRUE)
+my_db_30days2017 <- src_sqlite("30days2017pitchRx.sqlite3", create = TRUE)
+
+#confirm empty
+#my_db2016
+my_db072017
+my_dbyear2017
+my_db_30days2017
+
+## scrape 2017 game data and store in the database
+#library(pitchRx)
+Today <- Sys.Date()
+ThirtyDaysAgo <- Today - 30
+Threehundreddaysago <- Today-300
+scrape(start = ThirtyDaysAgo, end = Today, suffix = "inning/inning_all.xml", connect = my_db_30days2017$con)
+
+# To speed up execution time, create an index on these three fields
+dbSendQuery(my_db072017$con, "CREATE INDEX url_atbat ON atbat(url)") 
+dbSendQuery(my_db072017$con, "CREATE INDEX url_pitch ON pitch(url)")
+dbSendQuery(my_db072017$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
+dbSendQuery(my_db072017$con, "CREATE INDEX des_index ON pitch(des)")
+
+dbSendQuery(my_db_30days2017$con, "CREATE INDEX url_atbat ON atbat(url)") 
+dbSendQuery(my_db_30days2017$con, "CREATE INDEX url_pitch ON pitch(url)")
+dbSendQuery(my_db_30days2017$con, "CREATE INDEX pitcher_index ON atbat(pitcher_name)")
+dbSendQuery(my_db_30days2017$con, "CREATE INDEX des_index ON pitch(des)")
+
+
+# Load data from final month of World Series
+#data.fin.month <- scrape(start = "2016-09-25", end = "2016-10-24", connect = my_db1$con)
+#data.season 
+
+#pitch072017 <- select(tbl(my_db072017, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, sz_top, sz_bot, px, pz, pitch_type, end_speed, count, zone, nasty)
+#atbat072017 <- select(tbl(my_db072017, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
+
+pitch072017<- tbl(my_db072017, "pitch")
+atbat072017<- tbl(my_db072017, "atbat")
+
+pitchyear2017<- tbl(my_dbyear2017, "pitch")
+atbatyear2017<- tbl(my_dbyear2017, "atbat")
+
+pitch30days2017 <- tbl(my_db_30days2017, "pitch")
+atbat30days2017<- tbl(my_db_30days2017, "atbat")
