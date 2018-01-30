@@ -25,6 +25,7 @@ NinetyDaysAgo <- Today - 90
 pitch16 <- select(tbl(my_dbProd, "pitch"), gameday_link, num, des, type, tfs, tfs_zulu, id, end_speed, pitch_type, count, zone)
 atbat16 <- select(tbl(my_dbProd, "atbat"), gameday_link, num, pitcher, batter, b_height, pitcher_name, p_throws, batter_name, stand, atbat_des, event, inning, inning_side)
 
+#Jason's quantitative method for scoring plays
 get_quant_score <- function(des) {
     score <- (
         as.integer(str_detect(des, "Called Strike")) * -(1/3) +
@@ -41,6 +42,18 @@ get_quant_score <- function(des) {
     )
     return(score)
 }
+
+#can this be added to above script? 
+fix_quant_score <- function(event) {
+    score <- (
+        as.integer(str_detect(event, "Groundout")) * -2 +
+            as.integer(str_detect(event, "Forceout")) * -2 +
+            as.integer(str_detect(event, "Field Error")) * -2 
+    )
+    return(score)
+}
+
+#qualitative modifier based on play-by-play announcement text
 get_qual_score <- function(des) {
     score <- (
         as.integer(str_detect(des, "homer")) * 2 +
@@ -57,14 +70,6 @@ get_qual_score <- function(des) {
     return(score)
 }
 
-fix_quant_score <- function(event) {
-    score <- (
-        as.integer(str_detect(event, "Groundout")) * -2 +
-            as.integer(str_detect(event, "Forceout")) * -2 +
-            as.integer(str_detect(event, "Field Error")) * -2 
-    )
-    return(score)
-}
 # join filtered atbats to all pitches
 pitchesJoin <- collect(inner_join(pitch16, atbat16))
 
@@ -74,6 +79,8 @@ joined <- pitchesJoin %>% mutate(quant_score_des = get_quant_score(des),
                                  quant_score = quant_score_des + fix_quant_score,
                                  qual_score = get_qual_score(atbat_des) * (type == 'X'),
                                  hitter_val = quant_score + qual_score)
+
+#This portion of script prepares data for output into .csv for ingestion into python for building logistic regression model
 
 # convert to factor variables
 joined$pitch_type <- as.factor(joined$pitch_type) 
@@ -87,22 +94,23 @@ joined$stand <- as.factor(joined$stand)
 joined$inning <- as.factor(joined$inning)
 joined$inning_side <- as.factor(joined$inning_side)
 
-# convert FS and FT to SInkers 
+# dimensionality reduciton -- convert FS and FT to SInkers
 levels(joined$pitch_type)[levels(joined$pitch_type)=="FS"] <- "SI"
 levels(joined$pitch_type)[levels(joined$pitch_type)=="FT"] <- "SI"
 levels(joined$pitch_type)[levels(joined$pitch_type)=="FC"] <- "SL"
 levels(joined$pitch_type)[levels(joined$pitch_type)=="KC"] <- "KN"
 
-# Decide Good (1) or Bad (0)
+# Decide Good (1) or Bad (0) -- if the hitterval score is negative, we award this as "1" aka, good for pitcher
 joined.classic <- joined %>% mutate(hv_binary = ifelse(hitter_val < 0, 1, 0))
 
-#create zone and pitch type pairs
+
+#categorical data prep - create zone and pitch type pairs for one-hot encoding -- credit to Benita Mordi for this idea!!
 joined.classic <- joined.classic %>% mutate(ptz=paste(pitch_type,zone, sep = "_"))
 
-#remove infrequent pitch types
+#reduce feature space - remove infrequent pitch types
 joined.classic.pitchedit <- joined.classic %>% filter(pitch_type != c('EP','FO','PO','SC'))
 
-#view missing data
+#view missing data -- visualize missing data, part of exploratory search for best feature space
 #visna(joined.classic, tp = TRUE, col = "blue")
 
 #create subsets of pitcher stance and batter stance 
@@ -117,7 +125,7 @@ joined.classic.pitchedit <- joined.classic %>% filter(pitch_type != c('EP','FO',
 #LhRp <- Lh %>% filter(p_throws == "R")
 #LhLp <- Lh %>% filter(p_throws == "L")
 
-#Primary Component Plots... need to update table names per above convention
+#More exploratory visualizations: Primary Component Plots... need to update table names per above convention
 #PCP <- ggparcoord(data = joined_classic[order(joined_classic$hv_binary, decreasing = FALSE),], columns = c(40,46,30,16,17,32,88), groupColumn = "hv_binary", title = "Factors v Pitcher Outcome", alpha = .01) PCP_cat <- ggparcoord(data = joined.temp[order(joined.temp$GoodBadQual, decreasing = TRUE),], columns = c(40,46,30,32,88), groupColumn = "GoodBadQual", title = "Categorical Factors v Pitcher Outcome")
 #RpRh_pcp <- ggparcoord(data = RhRp[order(RhRp$hv_binary, decreasing = FALSE),], columns = c(8,9,11,14,27,28), groupColumn = "hv_binary", title = "RpRh PCP v Pitcher Outcome")
 #RpLh_pcp <- ggparcoord(data = RpitchLh[order(RpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "RpLh PCP v Pitcher Outcome")
@@ -125,7 +133,7 @@ joined.classic.pitchedit <- joined.classic %>% filter(pitch_type != c('EP','FO',
 #LpLh_pcp <- ggparcoord(data = LpitchLh[order(LpitchLh$GoodBadQual, decreasing = TRUE),], columns = c(16,17,30,32,40,46,88), groupColumn = "GoodBadQual", title = "LpLh PCP v Pitcher Outcome")
 
 #create data for Swinging Strikes outside the strike zone. 
-#SS_NonSZ_Rh <- Rpitch %>% filter (des == "Swinging Strike" & zone == c(11,12,13,14))
+#SS_NonSZ_Rh <- Rpitch   %>% filter (des == "Swinging Strike" & zone == c(11,12,13,14))
 #SS_NonSZ_Lh <- Lpitch %>% filter (des == "Swinging Strike" & zone == c(11,12,13,14))
 
 #export features of interest, with hv_binary label 1 if <0, else 0

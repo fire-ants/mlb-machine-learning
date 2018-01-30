@@ -1,7 +1,8 @@
 
 # coding: utf-8
 
-# In[79]:
+# In[1]:
+
 
 from sklearn import datasets
 from sklearn import preprocessing
@@ -27,20 +28,24 @@ import os
 
 # In[83]:
 
+
 os.chdir("/db")
 
 
-# In[81]:
+# In[2]:
+
 
 #os.getcwd()
 
 
 # In[ ]:
 
+
 #[514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
 
 
-# In[87]:
+# In[20]:
+
 
 def hv_model(features):
     
@@ -52,46 +57,43 @@ def hv_model(features):
     #identify unique batter ids in dataset
     Batters = raw.batter.unique()
     
+    #Note: opportunity to pass in argument of batters in the future
     Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
     
     #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
     P_throws = raw.p_throws.unique()
     
     #for each batter ID, produce two model results- against left handed pitchers and right handed pitchers
-    #for batter_id in Batters[5:8]:
-    for batter_id in Batters_list:
-        #findings lists
-        RHPfindingslist = list()
-        LHPfindingslist = list()
+    RHPfindingslist = list()
+    LHPfindingslist = list()
         
+    #generate results for each batter in list
+    for batter_id in Batters_list:
+        
+        #Separating right handed pitcher results from LHP results
         for hand in P_throws: 
             records = raw[(raw.batter == batter_id) & (raw.p_throws == hand)]
             num_events = len(records.index)
-            #print batter_id, hand, num_events
-            #print records.head()
     
-            #select features to incorporate into model
+            #select features to incorporate into model based on input argument
             var_interest = records[features]
 
             #zone is categorical, prep for encoding
             if 'zone' in var_interest:
-                #var_interest['zone'] = var_interest['zone'].astype(object)
-                var_interest.loc[:,'zone'] = var_interest[:,'zone'].astype(object)
-                
+                var_interest.loc[:,'zone'] = var_interest[:,'zone'].astype(object)   
             else:
                 pass
             
              #ptz variable (pitch_zone combo) is categorical, prep for encoding
             if 'ptz' in var_interest:
-                #var_interest['pitch_type_zone'] = var_interest['pitch_type_zone'].astype(object)
                 var_interest.ptz = var_interest.ptz.astype(object)   
             else:
                 pass
             
-            #estimator vector: binary representation of hitter_val: if hv <0, 1; else, 0. 
+            #label space Y: binary representation of hitter_val: if hv <0, 1; else, 0. 
             Y = var_interest[['hv_binary']]
             
-            #predictors of interest
+            #feature space X: drop labels in 'hv_binary'
             X = var_interest.drop(['hv_binary'], axis = 1)
 
             #Create count_type var (ahead, behind, even) if including in model
@@ -156,20 +158,22 @@ def hv_model(features):
             #for c in X_hot.columns:
              #   print (X_hot.columns.get_loc(c), c)
 
-            #Logistic regression model
+                
+                
+            #Logistic regression model, initialize
             logit_reg = linear_model.LogisticRegression()
 
-            #linear regression on one_hot data, using separate training set
+            #linear regression on one-hot encoded data X and Y HVAL labels
             model = logit_reg.fit(X_hot, Y.values.ravel())
 
-            #Results!
-            #Results!!
-            
+
+            #Average success, from pitcher's perspective
             avg_success=Y.mean().values[0]
             #print avg_success
             #print Y.mean()[0], Y.mean()[1]
-            
-            #Baseline_success = Y.mean().str.get(0)
+        
+            #Baseline pitcher success rate
+        
             #print "Random %s-handed pitcher's baseline success ratio against hitter:" % (hand, , Y.mean()
             if hand == 'R':
                     RHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))))
@@ -177,35 +181,43 @@ def hv_model(features):
                     LHPfindingslist.append(("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))))
             else:
                 pass
-            
-            
-            print "Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100))
-            #print("")
-            #print "Results of logistic regression" 
-            #print("")
-            
-            Results = pandas.DataFrame(zip(X_hot.columns, np.transpose(model.coef_), np.transpose(np.exp(model.coef_)), abs(np.transpose(np.exp(model.coef_)-1))))
+         
+        
+        
+            #logistic regression results
+            Results = pandas.DataFrame(list(zip(X_hot.columns, np.transpose(model.coef_), np.transpose(np.exp(model.coef_)), abs(np.transpose(np.exp(model.coef_)-1)))))
             
             Results.columns = ['Suggestion', 'LR_coeff/Log_Odds', 'Odds_Ratio', 'abs_pi']
     
+            #sorted results
             Results = Results.sort_values(by='abs_pi', ascending = False)
             Top_5 = Results[['Suggestion','Odds_Ratio']][:5]
             Top_5.Odds_Ratio = Top_5.Odds_Ratio.astype(float)
             
+            
+            
+            #below loop is to translate logistic regression coefficients into odds ratio, e.g., improved odds of success of choosing this feature
             x = Symbol('x')
             
             for index,row in Top_5.iterrows():
               
                 Top_5.loc[index,'New_Odds'] = solve(Top_5.loc[index,'Odds_Ratio']-((x/(1-x))/(Y.mean()/(1-Y.mean()))), x)
             
+            #string formatting
             Top_5['New_Odds']= Top_5['New_Odds'].str.get(0)
             #print Top_5['New_Odds'], Top_5['Odds_Ratio']
                 
-            #Thanks Benita!
+            
+            
             #Creating new series pt:pitch_type and zc:zone_catcher, e.g., zone from catcher's perspective
+            #Credit to Benita!
             s= Top_5['Suggestion'].apply(lambda x: x.split('_'))
             Top_5['pt'] = s.apply(lambda x: x[1])
             Top_5['zc'] = s.apply(lambda x: x[2])
+            
+            
+            
+            #Translation of codes to descriptive terms, pitch type and zone
             
             def applyFunc(s):
                 if s == 'FF':
@@ -259,17 +271,19 @@ def hv_model(features):
                 return ''
 
             #create series to describe zones, mirroring to be seen from pitcher's perspective
-            Top_5['zd'] = Top_5['zc'].apply(applyFunc2)
-                
-            #print Top_5
+            Top_5['zd'] = Top_5['zc'].apply(applyFunc2)    
+                 
             
-            #print("")
-    
-            #print Top_5.dtypes
-        
+            
             #Print the results!
+            
+            print("Batter ID: %s" % (batter_id))
+            print("")
+            print("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100)))
+            print ("")
+            
             for index,row in Top_5.iterrows():
-                print "Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100))
+                print("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
                 
                 if hand == 'R':
                     RHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
@@ -278,22 +292,29 @@ def hv_model(features):
                     LHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pd'], Top_5.loc[index, 'zd'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
                 else:
                     pass
-                #Top_5.loc[index,'New_Odds']
-                #"{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100))  
             
             print("")
-            print "Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y)
-            print("")
-            print batter_id
+            print("Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y))
+            print ("")
+            print ("")
+           
             #print model.decision_function(X_hot)
         
             #payload = {'findings': ['Throw a curve ball to the top right', 'Throw a curve ball down the middle']}
             #findingsList = ('Throw a curve ball to the top right', 'Throw a curve ball down the middle')
-            
+        
+   
+        
+        
+        #load data to object store
+        
+             #Note- this is dictionary containing findings results per pitcher. 
         findingsDict = {'leftyFindings': LHPfindingslist, 'rightyFindings': RHPfindingslist}
-        #print findingsDict
+        #print(findingsDict.items())
+        
         #payload = json.dumps(findingsDict)
         #print(payload)
+        
         # api-endpoint
         URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
         try:
@@ -306,7 +327,8 @@ def hv_model(features):
         print ("")
 
 
-# In[88]:
+# In[21]:
+
 
 hv_model(['ptz','hv_binary'])
 
