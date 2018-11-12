@@ -1,0 +1,8 @@
+---
+applications:
+- name: mlb-machine-learning
+  memory: 512M
+  instances: 1
+
+buildpacks: 
+- https://github.com/cloudfoundry/python-buildpack.git
