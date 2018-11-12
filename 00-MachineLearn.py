@@ -1,20 +1,23 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 #SKlearn for logistic regression modeling
 
 #from sklearn import datasets
-from sklearn import preprocessing
-from sklearn.datasets import make_classification
-from sklearn.ensemble import (ExtraTreesClassifier, RandomTreesEmbedding, RandomForestClassifier)
+#from sklearn import preprocessing
+#from sklearn.ensemble import (ExtraTreesClassifier, RandomTreesEmbedding, RandomForestClassifier)
+
+#one hot encoding package
 from sklearn.preprocessing import OneHotEncoder
 
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
-from sklearn import linear_model, decomposition, datasets
+#from sklearn.model_selection import train_test_split
+#from sklearn.pipeline import make_pipeline
+
+#linear_model for logit regression from sklearn
+from sklearn import linear_model
 
 #numpy, pandas for data manipulation
 import numpy as np
@@ -34,10 +37,10 @@ import os
 # In[83]:
 
 
-os.chdir("/db")
+#os.chdir("/db")
 
 
-# In[4]:
+# In[5]:
 
 
 os.getcwd()
@@ -49,7 +52,7 @@ os.getcwd()
 #[514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
 
 
-# In[5]:
+# In[11]:
 
 
 def hv_model(features):
@@ -58,8 +61,8 @@ def hv_model(features):
     raw = pd.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
     
     #Note: opportunity to pass in argument of batters in the future
-    Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
-
+    #Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
+    Batters_list = [457759]
     #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
     P_throws = raw.p_throws.unique()
     
@@ -221,34 +224,37 @@ def hv_model(features):
             
             #Print the results!
             
-            #print("Batter ID: %s" % (batter_id))
-            #print("")
-            #print("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100)))
-            #print("")
+            print("Batter ID: %s" % (batter_id))
+            print("")
+            print("Based on the last 90 days' worth of pitches against this batter, %s-handed pitchers have a %s success rate." % (hand,"{0:.0f}%".format(avg_success* 100)))
+            print("")
             
-            #for index,row in Top_5.iterrows():
-             #   print("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
+            for index,row in Top_5.iterrows():
+                print("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
                 
-              #  if hand == 'R':
-               #     RHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
+                if hand == 'R':
+                    RHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
                     
-               # elif hand == 'L':
-                #    LHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
-                #else:
-                #    pass
+                elif hand == 'L':
+                    LHPfindingslist.append("Throw a %s %s for a success rate of %s." % (Top_5.loc[index,'pitch_descrip'], Top_5.loc[index, 'zone_descrip'], "{0:.0f}%".format(Top_5.loc[index,'New_Odds'] * 100)))
+                else:
+                    pass
             
-            #print("")
-            #print("Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y))
-            #print("")
-            #print("")
+            print("")
+            print("Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y))
+            print("")
+            print("")
+            print("HOORAY!")
             
         #load data to object store
         
         #Note- this is dictionary containing findings results per pitcher. 
-        findingsDict = {'leftyFindings': LHPfindingslist, 'rightyFindings': RHPfindingslist}
+        global findingsDict
+        findingsDict = {'left_hand_pitcher_findings': LHPfindingslist, 'right_hand_pitcher_findings': RHPfindingslist}
 
         # api-endpoint
-        URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
+        #URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
+        URL = 'http://mlb-api.cfapps.io/player/%d/insight' % (batter_id)
         try:
             r = requests.post(url = URL, data = findingsDict)
             print(r.status_code)
@@ -259,13 +265,13 @@ def hv_model(features):
         print("")
 
 
-# In[8]:
+# In[12]:
 
 
 hv_model(['ptz','hv_binary'])
 
 
-# In[1]:
+# In[13]:
 
 
 findingsDict.items()
