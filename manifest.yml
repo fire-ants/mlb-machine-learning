@@ -1,9 +1,11 @@
-applications:
-- name: mlb-machine-learning
-  memory: 512M
-  instances: 1
+---
 
-buildpacks:
-  - python_buildpack
+  applications:
+  - name: mlb-machine-learning
+    memory: 512M
+    instances: 1
 
-command: "python 00-MachineLearn.py"
+  buildpacks:
+    - python_buildpack
+
+  command: "python 00-MachineLearn.py"
