@@ -1,0 +1,28 @@
+---
+jobs:
+  - name: deploy-ml-to-pws
+    plan:
+    - get: mlb-ml-repo
+      trigger: true
+    - put: deploy-to-cf
+      params:
+        manifest: mlb-ml-repo/manifest.yml
+        no_start: true
+
+resources:
+  - name: mlb-ml-repo
+    type: git
+    source:
+      uri: https://github.com/fire-ants/mlb-machine-learning.git
+      branch: {{BRANCH}}
+      private_key: {{GIT_PRIVATE_KEY}}
+
+  - name: deploy-to-cf
+    type: cf
+    source:
+      api: {{PWS_API}}
+      username: {{PWS_USER}}
+      password: {{PWS_PASS}}
+      organization: {{PWS_ORG}}
+      space: {{PWS_SPACE}}
+      skip_cert_check: true
