@@ -52,8 +52,12 @@ os.getcwd()
 #[514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
 
 
-# In[11]:
+# In[21]:
 
+
+def main():
+    
+    return hv_model(['ptz','hv_binary'])
 
 def hv_model(features):
     
@@ -61,8 +65,8 @@ def hv_model(features):
     raw = pd.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
     
     #Note: opportunity to pass in argument of batters in the future
-    #Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
-    Batters_list = [457759]
+    Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
+    #Batters_list = [457759]
     #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
     P_throws = raw.p_throws.unique()
     
@@ -245,6 +249,8 @@ def hv_model(features):
             print("")
             print("")
             print("HOORAY!")
+            print("")
+            print("")
             
         #load data to object store
         
@@ -256,13 +262,22 @@ def hv_model(features):
         #URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
         URL = 'http://mlb-api.cfapps.io/player/%d/insight' % (batter_id)
         try:
-            r = requests.post(url = URL, data = findingsDict)
+            r = requests.post(url = URL, json = findingsDict)
             print(r.status_code)
             r.raise_for_status()
         except requests.exceptions.HTTPError as err:
             print(err)
 
-        print("")
+        return("")
+      
+#if __name__ == "__main__":
+#    main()
+
+
+# In[22]:
+
+
+main()
 
 
 # In[12]:

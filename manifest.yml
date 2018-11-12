@@ -5,3 +5,5 @@ applications:
 
 buildpacks:
   - python_buildpack
+
+command: "python 00-MachineLearn.py"
