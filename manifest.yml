@@ -2,7 +2,7 @@
   applications:
   - name: mlb-machine-learning-2
     memory: 512M
-    instances: 1
+    instances: 0
     buildpack: python_buildpack
-    health-check-type: process
+    health-check-type: none
     no-route: true
