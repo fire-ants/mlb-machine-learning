@@ -4,6 +4,5 @@
     memory: 512M
     instances: 1
     buildpack: python_buildpack
-    #command: "python 00-MachineLearn.py"
     health-check-type: process
     no-route: true
