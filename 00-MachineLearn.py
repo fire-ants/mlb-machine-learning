@@ -62,20 +62,32 @@ def main():
 def hv_model(features):
     
     #import data, remove rows with NA values 
+    global raw
     raw = pd.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
     
     #Note: opportunity to pass in argument of batters in the future
+    global Batters_list
     Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
     #Batters_list = [457759]
     #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
     P_throws = raw.p_throws.unique()
     
     #for each batter ID, produce two model results- against left handed pitchers and right handed pitchers
-    RHPfindingslist = list()
-    LHPfindingslist = list()
-        
+    global RHPfindingslist, LHPfindingslist, findingsDict
+   
+    findingsDict = {}
+    count = 0
     #generate results for each batter in list
     for batter_id in Batters_list:
+        
+        RHPfindingslist = list()
+        LHPfindingslist = list()
+        
+        print("")
+        print("")
+        count += 1
+        
+        print("batter #:"+str(count))
         
         #Separating right handed pitcher results from LHP results
         for hand in P_throws: 
@@ -129,6 +141,7 @@ def hv_model(features):
             model = logit_reg.fit(X_hot, Y.values.ravel())
 
             #Average success, from pitcher's perspective.  Note that this is just the baseline likelihood of predicting the correct outcome by chance. We compare our model accuracy to this value.
+            
             avg_success=Y.mean().values[0]
         
             #Baseline pitcher success rate
@@ -141,12 +154,14 @@ def hv_model(features):
                 pass
          
             #logistic regression results
+            global Results
             Results = pd.DataFrame(list(zip(X_hot.columns, np.transpose(model.coef_), np.transpose(np.exp(model.coef_)), abs(np.transpose(np.exp(model.coef_)-1)))))
             
             Results.columns = ['Recommendation', 'LR_coeff/Log_Odds', 'Odds_Ratio', 'Abs_Odds_Ratio_-1']
     
             #sorted results
             Results = Results.sort_values(by='Abs_Odds_Ratio_-1', ascending = False)
+            global Top_5
             Top_5 = Results[['Recommendation','Odds_Ratio']][:5]
             Top_5.Odds_Ratio = Top_5.Odds_Ratio.astype(float)
             
@@ -245,7 +260,7 @@ def hv_model(features):
                     pass
             
             print("")
-            print("Note: Model Accuracy, based on %s pitches:" % num_events, model.score(X_hot, Y))
+            print("Note: Model Accuracy, based on %s pitches:" % num_events, "{0:.0%}".format(model.score(X_hot, Y)))
             print("")
             print("")
             print("HOORAY!")
@@ -255,21 +270,19 @@ def hv_model(features):
         #load data to object store
         
         #Note- this is dictionary containing findings results per pitcher. 
-        global findingsDict
-        findingsDict = {'left_hand_pitcher_findings': LHPfindingslist, 'right_hand_pitcher_findings': RHPfindingslist}
+        
+        findingsDict[batter_id] = {'left_hand_pitcher_findings': LHPfindingslist, 'right_hand_pitcher_findings': RHPfindingslist}
 
         # api-endpoint
         #URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
         URL = 'http://mlb-api.cfapps.io/player/%d/insight' % (batter_id)
         try:
-            r = requests.post(url = URL, json = findingsDict)
+            r = requests.post(url = URL, json = findingsDict[batter_id])
             print(r.status_code)
             r.raise_for_status()
         except requests.exceptions.HTTPError as err:
             print(err)
-
-        return("")
-      
+            
 #if __name__ == "__main__":
 #    main()
 
@@ -277,7 +290,9 @@ def hv_model(features):
 # In[22]:
 
 
-main()
+if __name__ == "__main__":   
+    
+    main()
 
 
 # In[12]:
