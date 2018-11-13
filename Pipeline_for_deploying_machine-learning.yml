@@ -8,7 +8,6 @@ jobs:
       params:
         path: mlb-ml-repo
         manifest: mlb-ml-repo/manifest.yml
-        no_start: true
 
 resources:
   - name: mlb-ml-repo
