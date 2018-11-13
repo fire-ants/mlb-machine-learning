@@ -1,6 +1,6 @@
 ---
   applications:
-  - name: mlb-machine-learning
+  - name: mlb-machine-learning-2
     memory: 512M
     instances: 1
     buildpack: python_buildpack
