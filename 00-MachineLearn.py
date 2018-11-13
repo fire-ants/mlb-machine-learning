@@ -60,10 +60,16 @@ os.getcwd()
 pd.set_option('mode.chained_assignment', None)
 
 
-# In[15]:
+# In[17]:
 
 
 def main():
+    
+    print("PREPARE TO MEET YOUR PITCHER'S FRIEND")
+    print("...")
+    print("..")
+    print(".")
+    print(" ")
     
     return hv_model(['ptz','hv_binary'])
 
