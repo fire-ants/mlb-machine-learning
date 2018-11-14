@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[8]:
+# In[2]:
 
 
 #SKlearn for logistic regression modeling
@@ -47,7 +47,7 @@ import yaml
 #os.getcwd()
 
 
-# In[10]:
+# In[3]:
 
 
 #Note: this is a pandas option to omit the warning that we are performing chained indexing. While one should be careful to avoid
@@ -64,7 +64,7 @@ pd.set_option('mode.chained_assignment', None)
 #df_csv.head()
 
 
-# In[12]:
+# In[20]:
 
 
 def main():
@@ -75,20 +75,21 @@ def main():
     print(".")
     print(" ")
     
+    #load credentials
     mlb_host, mlb_db, mlb_db_user, mlb_db_pwd = load_cred('credentials.yml')
     
+    #open MySQL connection, pull data, close connection
     db_con = sql.connect(host = mlb_host, database = mlb_db, user = mlb_db_user, password = mlb_db_pwd)
-    
     dataframe = pd.read_sql('SELECT pitcher, batter, p_throws, stand, hv_binary, ptz FROM rawdata_ML', con=db_con)
-    
-    #pull_data()
-    
-    df = clean_data(dataframe)
-    
-    batters_of_interest = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
-    
     db_con.close()
     
+    #clean data
+    df = clean_data(dataframe)
+    
+    #define batters of interest by batter ID
+    batters_of_interest = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
+    
+    #run model on var & batters of interest from current data
     return hv_model(['ptz','hv_binary'],batters_of_interest,df)
 
 def load_cred(file):
@@ -126,11 +127,8 @@ def hv_model(features,batters_list,data):
     #generate results for each batter in list
     for batter_id in batters_list:
         
-    #test against batters known to be in current list during dev
-    #for batter_id in Batter_list_test[:10]:
-        
         #per run (for each batter ID), produce two model results- against left handed pitchers and right handed pitchers
-        #note these lists are cleared/recreated for *each* batter_id
+        #note these lists are cleared/recreated for *each* batter_id by nature of their creation within the for loop
         RHPfindingslist = list()
         LHPfindingslist = list()
         
@@ -331,20 +329,7 @@ def hv_model(features,batters_list,data):
     return("")
 
 
-# In[13]:
-
-
-#quick check to see if batters from "interest list" as pre-defined by PF gods is in current data pulled from DB
-
-#Batters_series = pd.Series([514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346])
-#Batters_series.isin(df_input.batter.unique())
-
-#Batter_list_test = df['batter'].unique()
-#Batter_list_test.sort()
-#Batter_list_test[:10]
-
-
-# In[14]:
+# In[21]:
 
 
 if __name__ == "__main__":   
