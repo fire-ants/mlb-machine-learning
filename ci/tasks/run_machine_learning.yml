@@ -1,0 +1,33 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: governmentpaas/cf-cli
+    tag: latest
+
+inputs:
+- name: mlb-ml-repo
+params:
+  CF_USER:
+  CF_PASSWORD:
+  CF_ORG:
+  CF_SPACE:
+# outputs:
+# - name:
+
+run:
+  path: sh
+  args:
+    - -exc
+    - |
+      cf login -a api.run.pivotal.io -u $CF_USER -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE
+      taskname=$(cf run-task mlb-machine-learning-2 "python 00-MachineLearn.py" | grep "task name" | cut -f2 -d: | xargs echo -n)
+      RUNNING=$(cf tasks mlb-machine-learning-2 | grep "$taskname" | grep 'RUNNING')
+      echo ${RUNNING}
+      while [[ ${RUNNING} ]] ; do
+      sleep 10
+      echo ${RUNNING}
+      RUNNING=$(cf tasks mlb-machine-learning-2 | grep "$taskname" | grep 'RUNNING')
+      done
+      echo done processing
