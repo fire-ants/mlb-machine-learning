@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[8]:
 
 
 #SKlearn for logistic regression modeling
@@ -23,6 +23,9 @@ from sklearn import linear_model
 import numpy as np
 import pandas as pd
 
+#MySQL connectivity
+import mysql.connector as sql
+
 #import sympy for formulaic expression of log-odds ratios, e.g., to produce % success rates from coefficients of logit reg
 import sympy
 from sympy.solvers import solve
@@ -33,34 +36,35 @@ import requests
 import json
 import os
 
+#yaml package for cred import
+import yaml
 
-# In[83]:
+
+# In[9]:
 
 
 #os.chdir("/db")
+#os.getcwd()
 
 
-# In[5]:
+# In[10]:
 
 
-os.getcwd()
-
-
-# In[ ]:
-
-
-#[514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
-
-
-# In[12]:
-
-
-#Note: this is a pandas option to omit the warning that we are performing chained indexing. While one should be careful to avoid doing so when unintended (as can produce incorrect results), here we use this formatting as .loc method seemed to cause errors in part of the script. If strange results are obtained at some point and no other cause can be identified, this should be revisited. 
+#Note: this is a pandas option to omit the warning that we are performing chained indexing. While one should be careful to avoid
+#doing so when unintended (as can produce incorrect results), here we use this approach because .loc method seemed to cause errors in part of the script. If strange results are obtained at some point and no other cause can be identified, this should be revisited. 
 #http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
 pd.set_option('mode.chained_assignment', None)
 
 
-# In[17]:
+# In[11]:
+
+
+#legacy pull from csv
+#df_csv = pd.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
+#df_csv.head()
+
+
+# In[12]:
 
 
 def main():
@@ -71,27 +75,62 @@ def main():
     print(".")
     print(" ")
     
-    return hv_model(['ptz','hv_binary'])
+    mlb_host, mlb_db, mlb_db_user, mlb_db_pwd = load_cred('credentials.yml')
+    
+    db_con = sql.connect(host = mlb_host, database = mlb_db, user = mlb_db_user, password = mlb_db_pwd)
+    
+    dataframe = pd.read_sql('SELECT pitcher, batter, p_throws, stand, hv_binary, ptz FROM rawdata_ML', con=db_con)
+    
+    #pull_data()
+    
+    df = clean_data(dataframe)
+    
+    batters_of_interest = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
+    
+    db_con.close()
+    
+    return hv_model(['ptz','hv_binary'],batters_of_interest,df)
 
-def hv_model(features):
+def load_cred(file):
+    #pull credentials from yaml
+    cred = yaml.load(open(file))
+    mlb_host = cred['SQL_HOST']
+    mlb_db = cred['SQL_DB']
+    mlb_db_user = cred['SQL_USER']
+    mlb_db_pwd = cred['SQL_PW']
     
-    #import data, remove rows with NA values 
-    raw = pd.read_csv("rawdata_ML.csv", encoding = "utf-8-sig").dropna(axis=0)
+    return mlb_host, mlb_db, mlb_db_user, mlb_db_pwd
+
+def clean_data(data):
+    #clean data.. drop N/A, duplicate rows, observe shape
+    data.dropna(axis=0)
+    data=data.drop_duplicates()
+    #df_input.shape
     
-    #Note: opportunity to pass in argument of batters in the future
-    Batters_list = [514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346]
- 
-    #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
-    P_throws = raw.p_throws.unique()
+    #format pitcher, batter, hv_binary as int
+    data[['pitcher','batter','hv_binary']] = data[['pitcher','batter','hv_binary']].astype(int)
+    #df.dtypes
     
-    global findingsDict
+    return data
+
+def hv_model(features,batters_list,data):
+    #main modeling script.. needs to be broken up into smaller functions at some point in the future
+    
+    #empty dictionary for findings, count to track batter-specific model run #
     findingsDict = {}
-    count = 0
+    count = 0 
     
+    #identify pitcher handedness. Like Jason has yet to see my ambidextrosity, we have yet to see anything more than "L" or "R", but we prefer this method to hard coding :P
+    P_throws = data.p_throws.unique()
+
     #generate results for each batter in list
-    for batter_id in Batters_list:
+    for batter_id in batters_list:
+        
+    #test against batters known to be in current list during dev
+    #for batter_id in Batter_list_test[:10]:
         
         #per run (for each batter ID), produce two model results- against left handed pitchers and right handed pitchers
+        #note these lists are cleared/recreated for *each* batter_id
         RHPfindingslist = list()
         LHPfindingslist = list()
         
@@ -103,7 +142,7 @@ def hv_model(features):
         
         #Separating right handed pitcher results from LHP results
         for hand in P_throws: 
-            records = raw[(raw.batter == batter_id) & (raw.p_throws == hand)]
+            records = data[(data.batter == batter_id) & (data.p_throws == hand)]
             num_events = len(records.index)
     
             #select features to incorporate into model based on input argument
@@ -166,7 +205,6 @@ def hv_model(features):
          
             #logistic regression results
             Results = pd.DataFrame(list(zip(X_hot.columns, np.transpose(model.coef_), np.transpose(np.exp(model.coef_)), abs(np.transpose(np.exp(model.coef_)-1)))))
-            
             Results.columns = ['Recommendation', 'LR_coeff/Log_Odds', 'Odds_Ratio', 'Abs_Odds_Ratio_-1']
     
             #sorted results
@@ -249,7 +287,6 @@ def hv_model(features):
             Top_5['zone_descrip'] = Top_5['zc'].apply(applyFunc2)    
                  
             
-            
             #Print the results!
             
             print("Batter ID: %s" % (batter_id))
@@ -279,7 +316,6 @@ def hv_model(features):
         #load data to object store
         
         #Note- this is dictionary containing findings results per pitcher. 
-        
         findingsDict[batter_id] = {'left_hand_pitcher_findings': LHPfindingslist, 'right_hand_pitcher_findings': RHPfindingslist}
 
         # api-endpoint
@@ -292,26 +328,23 @@ def hv_model(features):
         except requests.exceptions.HTTPError as err:
             print(err)
         
-        '''global findingsDict
-        findingsDict = {'left_hand_pitcher_findings': LHPfindingslist, 'right_hand_pitcher_findings': RHPfindingslist}
-
-        # api-endpoint
-        #URL = 'http://mlb-player-api.cfapps.io/player/%d/insight' % (batter_id)
-        URL = 'http://mlb-api.cfapps.io/player/%d/insight' % (batter_id)
-        try:
-            r = requests.post(url = URL, json = findingsDict)
-            print("HTTP status code"+str(r.status_code))
-            r.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-            print(err)'''
-
     return("")
-      
-#if __name__ == "__main__":
-#    main()
 
 
-# In[16]:
+# In[13]:
+
+
+#quick check to see if batters from "interest list" as pre-defined by PF gods is in current data pulled from DB
+
+#Batters_series = pd.Series([514888,453568,457759,519317,458015,547180,641355,592450,545361,457705,502671,518626,502517,518934,471865,592178,519346])
+#Batters_series.isin(df_input.batter.unique())
+
+#Batter_list_test = df['batter'].unique()
+#Batter_list_test.sort()
+#Batter_list_test[:10]
+
+
+# In[14]:
 
 
 if __name__ == "__main__":   
