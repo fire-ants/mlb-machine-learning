@@ -9,5 +9,4 @@ chardet==3.0.4
 idna==2.6
 requests==2.18.4
 urllib3==1.22
-mysql-connector-c==6.1.11
-mysql-connector-python==8.0.12
+mysql-connector-python
