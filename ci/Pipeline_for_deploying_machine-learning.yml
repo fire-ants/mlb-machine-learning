@@ -8,7 +8,13 @@ jobs:
       params:
         path: mlb-ml-repo
         manifest: mlb-ml-repo/manifest.yml
-
+  - name: run-ml
+    plan:
+    - get: mlb-ml-repo
+      trigger: false
+      passed: [deploy-ml-to-pws]
+    - task: run-ml-script
+      file: mlb-ml-repo/ci/tasks/run_machine_learning.yml
 resources:
   - name: mlb-ml-repo
     type: git

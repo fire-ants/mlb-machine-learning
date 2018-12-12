@@ -36,4 +36,5 @@ vignettes/*.pdf
 # database files
 .sqlite3
 *.sqlite3
-credentials.yml
+
+ci/credentials.yml
