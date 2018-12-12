@@ -4,17 +4,8 @@
 # In[2]:
 
 
-#SKlearn for logistic regression modeling
-
-#from sklearn import datasets
-#from sklearn import preprocessing
-#from sklearn.ensemble import (ExtraTreesClassifier, RandomTreesEmbedding, RandomForestClassifier)
-
 #one hot encoding package
 from sklearn.preprocessing import OneHotEncoder
-
-#from sklearn.model_selection import train_test_split
-#from sklearn.pipeline import make_pipeline
 
 #linear_model for logit regression from sklearn
 from sklearn import linear_model
@@ -76,7 +67,7 @@ def main():
     print(" ")
     
     #load credentials
-    mlb_host, mlb_db, mlb_db_user, mlb_db_pwd = load_cred('credentials.yml')
+    mlb_host, mlb_db, mlb_db_user, mlb_db_pwd = load_cred('ci/credentials.yml')
     
     #open MySQL connection, pull data, close connection
     db_con = sql.connect(host = mlb_host, database = mlb_db, user = mlb_db_user, password = mlb_db_pwd)
@@ -178,10 +169,6 @@ def hv_model(features,batters_list,data):
 
             #Create one_hot encoded predictor array for logistic regression
             X_hot = pd.get_dummies(X)
-            
-            #note that we do not need to create train/test splits for this case, as we are interested in the coefficients of the model, not predicting non-classified results            
-            #Split up train and test data, 80/20 split
-            #X_hot_train, X_hot_test, y_train, y_test = train_test_split(X_hot, Y, test_size = 0.3)
 
             #Logistic regression model, initialize function from sklearn
             logit_reg = linear_model.LogisticRegression()
