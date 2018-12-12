@@ -67,7 +67,10 @@ def main():
     print(" ")
     
     #load credentials
-    mlb_host, mlb_db, mlb_db_user, mlb_db_pwd = load_cred('ci/credentials.yml')
+    mlb_host = os.environ['mlb_db_hostname']
+    mlb_db = os.environ['mlb_db_dbname']
+    mlb_db_user = os.environ['mlb_db_username']
+    mlb_db_pwd = os.environ['mlb_db_password']
     
     #open MySQL connection, pull data, close connection
     db_con = sql.connect(host = mlb_host, database = mlb_db, user = mlb_db_user, password = mlb_db_pwd)
@@ -82,22 +85,6 @@ def main():
     
     #run model on var & batters of interest from current data
     return hv_model(['ptz','hv_binary'],batters_of_interest,df)
-
-def load_cred(file):
-    #pull credentials from yaml
-    
-    #cred = yaml.load(open(file))
-    #mlb_host = cred['SQL_HOST']
-    #mlb_db = cred['SQL_DB']
-    #mlb_db_user = cred['SQL_USER']
-    #mlb_db_pwd = cred['SQL_PW']
-    
-    mlb_host = os.environ['mlb_db_hostname']
-    mlb_db = os.environ['mlb_db_dbname']
-    mlb_db_user = os.environ['mlb-db-ant']
-    mlb_db_pwd = os.environ['mlb_db_password']
-    
-    return mlb_host, mlb_db, mlb_db_user, mlb_db_pwd
 
 def clean_data(data):
     #clean data.. drop N/A, duplicate rows, observe shape
