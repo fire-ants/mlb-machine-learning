@@ -9,7 +9,7 @@ image_resource:
 inputs:
 - name: mlb-ml-repo
 params:
-  CF_USER: {{PWS_USER}}
+  PWS_USER:
   CF_PASSWORD: {{PWS_PASS}}
   CF_ORG: {{PWS_ORG}}
   CF_SPACE: {{PWS_SPACE}}
@@ -21,7 +21,7 @@ run:
   args:
     - -exc
     - |
-      cf login -a api.run.pivotal.io -u $CF_USER -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE
+      cf login -a api.run.pivotal.io -u $PWS_USER -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE
       taskname=$(cf run-task mlb-machine-learning-2 "python 00-MachineLearn.py" | grep "task name" | cut -f2 -d: | xargs echo -n)
       RUNNING=$(cf tasks mlb-machine-learning-2 | grep "$taskname" | grep 'RUNNING')
       echo ${RUNNING}
