@@ -15,11 +15,6 @@ jobs:
       passed: [deploy-ml-to-pws]
     - task: run-ml-script
       file: mlb-ml-repo/ci/tasks/run_machine_learning.yml
-      params:
-        CF_USER: {{PWS_USER}}
-        CF_PASS: {{PWS_PASS}}
-        CF_ORG: {{PWS_ORG}}
-        CF_SPACE: {{PWS_SPACE}}
 resources:
   - name: mlb-ml-repo
     type: git

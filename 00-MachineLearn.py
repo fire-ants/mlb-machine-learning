@@ -71,7 +71,7 @@ def main():
     
     #open MySQL connection, pull data, close connection
     db_con = sql.connect(host = mlb_host, database = mlb_db, user = mlb_db_user, password = mlb_db_pwd)
-    dataframe = pd.read_sql('SELECT pitcher, batter, p_throws, stand, hv_binary, ptz FROM rawdata_ML', con=db_con)
+    dataframe = pd.read_sql('SELECT pitcher, batter, p_throws, stand, hv_binary, ptz FROM rawdata_ML LIMIT 200000', con=db_con)
     db_con.close()
     
     #clean data
@@ -85,11 +85,17 @@ def main():
 
 def load_cred(file):
     #pull credentials from yaml
-    cred = yaml.load(open(file))
-    mlb_host = cred['SQL_HOST']
-    mlb_db = cred['SQL_DB']
-    mlb_db_user = cred['SQL_USER']
-    mlb_db_pwd = cred['SQL_PW']
+    
+    #cred = yaml.load(open(file))
+    #mlb_host = cred['SQL_HOST']
+    #mlb_db = cred['SQL_DB']
+    #mlb_db_user = cred['SQL_USER']
+    #mlb_db_pwd = cred['SQL_PW']
+    
+    mlb_host = os.environ['mlb_db_hostname']
+    mlb_db = os.environ['mlb_db_dbname']
+    mlb_db_user = os.environ['mlb-db-ant']
+    mlb_db_pwd = os.environ['mlb_db_password']
     
     return mlb_host, mlb_db, mlb_db_user, mlb_db_pwd
 
