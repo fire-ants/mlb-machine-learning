@@ -9,10 +9,10 @@ image_resource:
 inputs:
 - name: mlb-ml-repo
 params:
-  CF_USER:
-  CF_PASS:
-  CF_ORG:
-  CF_SPACE:
+  CF_USER: ((PWS_USER))
+  CF_PASS: ((PWS_PASS))
+  CF_ORG: ((PWS_ORG))
+  CF_SPACE: ((PWS_SPACE))
 # outputs:
 # - name:
 
