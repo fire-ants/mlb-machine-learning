@@ -37,4 +37,7 @@ vignettes/*.pdf
 .sqlite3
 *.sqlite3
 
+# pcf credentials
+pipeline-params.yml
+ci/pipeline-params.yml
 ci/credentials.yml

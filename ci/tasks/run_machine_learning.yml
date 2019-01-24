@@ -9,25 +9,26 @@ image_resource:
 inputs:
 - name: mlb-ml-repo
 params:
-  CF_USER: ((PWS_USER))
-  CF_PASS: ((PWS_PASS))
-  CF_ORG: ((PWS_ORG))
-  CF_SPACE: ((PWS_SPACE))
+  CF_USER:
+  CF_PASSWORD:
+  CF_ORG:
+  CF_SPACE:
 # outputs:
 # - name:
 
 run:
-  path: sh
+  path: /bin/bash
   args:
     - -exc
     - |
-      cf login -a api.run.pivotal.io -u $CF_USER -p $CF_PASS -o $CF_ORG -s $CF_SPACE
+      cf login -a api.run.pivotal.io -u $CF_USER -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE
       taskname=$(cf run-task mlb-machine-learning "python 00-MachineLearn.py" | grep "task name" | cut -f2 -d: | xargs echo -n)
-      RUNNING=$(cf tasks mlb-machine-learning | grep "$taskname" | grep 'RUNNING')
-      echo ${RUNNING}
-      while [[ ${RUNNING} ]] ; do
+      IsRunning=$(cf tasks mlb-machine-learning | grep "$taskname" | grep 'RUNNING')
+      echo ${IsRunning}
+      while [[ ${IsRunning} ]] ; do
       sleep 10
-      echo ${RUNNING}
-      RUNNING=$(cf tasks mlb-machine-learning | grep "$taskname" | grep 'RUNNING')
+      IsRunning=$(cf tasks mlb-machine-learning | grep "$taskname" | grep 'RUNNING' || true)
+      echo ${IsRunning}
       done
       echo done processing
+      cf logs mlb-machine-learning --recent | grep "$taskname"

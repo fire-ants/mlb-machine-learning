@@ -1,0 +1,51 @@
+resources:
+- name: mlb-ml-repo
+  type: git
+  source:
+    uri: https://github.com/fire-ants/mlb-machine-learning.git
+    branch: ((git-branch))
+    ignore_paths:
+    - ci/pipeline.yml
+    - README.md
+    private_key: ((git-private-key))
+- name: pcf-prod
+  type: cf
+  source:
+    api: api.run.pivotal.io
+    organization: ((cf-org))
+    space: ((cf-space))
+    username: ((cf-username))
+    password: ((cf-password))
+    skip_cert_check: false
+jobs:
+- name: build
+  plan:
+    - aggregate:
+      - get: mlb-ml-repo
+        resource: mlb-ml-repo
+        trigger: true
+    # list directory is an placeholder for checking something before pushing to CF
+    - task: list_directory
+      file: mlb-ml-repo/ci/tasks/list_directory.yml
+    - put: pcf-prod
+      params:
+        path: mlb-ml-repo
+        manifest: mlb-ml-repo/manifest.yml
+        show_app_log: true
+        environment_variables:
+            mlb_db_dbname: ((mlb_db_dbname))
+            mlb_db_hostname: ((mlb_db_hostname))
+            mlb_db_port: ((mlb_db_port))
+            mlb_db_username: ((mlb_db_username))
+            mlb_db_password: ((mlb_db_password))
+- name: run-ml
+  plan:
+    - get: mlb-ml-repo
+      resource: mlb-ml-repo
+    - task: run-ml
+      file: mlb-ml-repo/ci/tasks/run_machine_learning.yml
+      params:
+        CF_USER: ((cf-username))
+        CF_PASSWORD: ((cf-password))
+        CF_ORG: ((cf-org))
+        CF_SPACE: ((cf-space))
